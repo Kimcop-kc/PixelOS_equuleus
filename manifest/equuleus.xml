@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    PixelOS Android 15 (fifteen) — local manifest for Xiaomi Mi 8 Pro (equuleus)
+
+    AUDITED: 2026-11-12 against PixelOS-AOSP/manifest@fifteen
+             0334d5e468a86ab0aefa6d3a40bc2abd11bf4035 (default.xml + snippets).
+
+    RULES ENFORCED HERE
+    —————————————————————————————————
+    * Every <project> pins a full 40-character commit SHA. Branch names are
+      rejected by this repository's own verification script
+      (scripts/verify_deliverables.py) because a branch is not reproducible.
+    * No <project> re-declares a path that PixelOS fifteen already owns.
+      Paths that PixelOS already defines but need a different revision/remote
+      use <extend-project> instead (repo supports extend-project with
+      path+revision overrides; verified in GerritCodeReview/git-repo
+      manifest_xml.py).
+    * vendor/xiaomi/equuleus and vendor/xiaomi/sdm845-common are deliberately
+      ABSENT: they are generated from MIUI blobs and must never be fabricated
+      or taken from an unverified third-party repo.
+      See BLOB_EXTRACTION.md and KNOWN_BLOCKERS.md (B-01/B-02).
+
+    NOT YET PRODUCIBLE
+    —————————————————————————————————
+    `repo sync` with this manifest will still stop at the missing
+    vendor/xiaomi trees if you try to build. That is intentional and tracked.
+-->
+
+<manifest>
+
+  <!-- ================================================================
+       Device trees. These paths do not exist in the PixelOS manifest, so
+       they are plain <project> entries.
+
+       Sources are LineageOS lineage-22.2 device trees. They are the only
+       trees that exist for equuleus at Android 15; PixelOS has no
+       equuleus/sdm845 tree at any branch (checked: PixelOS-Devices org
+       exposes sixteen/seventeen only, and no equuleus repo at all).
+       ================================================================ -->
+
+  <!-- device/xiaomi/equuleus @ db40750f063e86110e20db1455729c0f6621f7da
+       "equuleus: Update fstab entry to auto mount USB" (2026-02-07)
+       License: Apache-2.0 -->
+  <project path="device/xiaomi/equuleus"
+           name="LineageOS/android_device_xiaomi_equuleus"
+           revision="db40750f063e86110e20db1455729c0f6621f7da"
+           remote="LineageOS" />
+
+  <!-- device/xiaomi/sdm845-common @ 35cf356b095e033e71261b16c7fa319faac12cb3
+       License: Apache-2.0 -->
+  <project path="device/xiaomi/sdm845-common"
+           name="LineageOS/android_device_xiaomi_sdm845-common"
+           revision="35cf356b095e033e71261b16c7fa319faac12cb3"
+           remote="LineageOS" />
+
+  <!-- kernel/xiaomi/sdm845 @ aa8adfe9bf212c6e93238a86980b4024da4f819a
+       Linux 4.9.337, defconfig vendor/xiaomi/mi845_defconfig
+       + fragment vendor/xiaomi/equuleus.config (both verified present).
+       License: GPL-2.0 -->
+  <project path="kernel/xiaomi/sdm845"
+           name="LineageOS/android_kernel_xiaomi_sdm845"
+           revision="aa8adfe9bf212c6e93238a86980b4024da4f819a"
+           remote="LineageOS" />
+
+  <!-- ================================================================
+       hardware/xiaomi — CHOOSE EXACTLY ONE (never both; they share a path).
+
+       Chosen: PixelOS-AOSP/hardware_xiaomi @ fifteen
+               281f97dbac46b75eb7b6a680624e62e807ec0689
+
+       Reasons (verified by diffing both checkouts):
+         * It is the tree PixelOS' own product configs are developed against.
+         * sdm845-common only consumes three modules from this repo:
+             - //hardware/xiaomi:xiaomifingerprint_headers   (udfps/Android.bp)
+             - //hardware/xiaomi:libudfps_extension.xiaomi   (device.mk)
+             - hardware/xiaomi  soong namespace              (sdm845.mk)
+           All three are byte-identical between the two forks.
+         * It additionally carries the Dolby/media.c2 and touchfeature VINTF
+           entries that PixelOS' framework matrix expects.
+
+       The LineageOS fork has extra `aidl/touch` + `megvii` directories that
+       nothing in the equuleus/sdm845-common trees references, so nothing is
+       lost by choosing the PixelOS fork.
+       Trade-off recorded in DEVICE_AUDIT.md §4.
+       ================================================================ -->
+  <!-- name is the REPOSITORY only; remote="PixelOS" supplies the org.
+       Writing "PixelOS-AOSP/hardware_xiaomi" here made repo build
+       .../PixelOS-AOSP/PixelOS-AOSP/hardware_xiaomi (404). -->
+  <project path="hardware/xiaomi"
+           name="hardware_xiaomi"
+           revision="281f97dbac46b75eb7b6a680624e62e807ec0689"
+           remote="PixelOS" />
+
+  <!-- ================================================================
+       Overrides of paths PixelOS already defines. Use extend-project, NOT
+       project — a second <project> for the same path is a repo error.
+
+       hardware/lineage/interfaces
+         Why an explicit pin is needed at all: git-repo does NOT read
+         revision_lock.xml automatically. Verified against
+         GerritCodeReview/git-repo (manifest_xml.py, subcmds/*.py): no code
+         path reads that filename; `repo init -m <file>` is the only way to
+         select a non-default manifest. So a plain
+           repo init -u https://github.com/PixelOS-AOSP/manifest.git -b fifteen
+         resolves every project to a *branch head*, i.e. a moving target.
+         PixelOS' own revision_lock.xml is the intended reproducibility
+         mechanism, and it pins this project to
+         f568995691b655491d1b3d309f0e6eb96ebeb248.
+         At that SHA the repository has HIDL livedisplay/2.0 and 2.1 but NO
+         livedisplay/aidl directory (verified by tarball listing), so
+         sdm845-common/livedisplay/Android.bp — which links the AIDL module
+         `vendor.lineage.livedisplay-V1-ndk` and the generated header
+         aidl/vendor/lineage/livedisplay/BnSunlightEnhancement.h — cannot
+         build. A revision-locked sync is therefore broken for this device.
+         The AIDL interface exists at lineage-22.2 head
+         3466aa530ace6de0760c12a68cf81b31e8d3807b (livedisplay/aidl/Android.bp,
+         aidl_api/vendor.lineage.livedisplay/1/... present).
+         Pinning that SHA makes the tree identical under both a plain sync
+         and `repo init -m revision_lock.xml`.
+         Risk + verification duty: KNOWN_BLOCKERS.md B-07.
+       ================================================================ -->
+  <extend-project name="LineageOS/android_hardware_lineage_interfaces"
+                  path="hardware/lineage/interfaces"
+                  revision="3466aa530ace6de0760c12a68cf81b31e8d3807b" />
+
+  <!-- ================================================================
+       vendor/gms — the manifest as shipped by PixelOS fifteen is BROKEN.
+
+       Upstream declares, in snippets/custom.xml:
+
+           <project path="vendor/gms" name="vendor_gms"
+                    clone-depth="1" remote="PixelOS-Gitlab" />
+
+       with remote PixelOS-Gitlab = https://gitlab.com/PixelOS-AOSP and
+       revision refs/heads/fifteen. That resolves to
+       https://gitlab.com/PixelOS-AOSP/vendor_gms — which has ONLY a
+       `sixteen` branch (68298e26d926ef6cee83822d5c01e1792dd32bc6).
+       `repo sync` therefore cannot check out vendor/gms at fifteen.
+
+       This is not cosmetic. vendor/aosp/config/common.mk line 5 does:
+
+           $(call inherit-product, vendor/gms/products/gms.mk)
+
+       and common_full_phone.mk -> common_mobile_full.mk -> common_mobile.mk
+       -> common.mk is the exact chain aosp_equuleus inherits. GMS is
+       therefore an UNCONDITIONAL dependency of this product, not an
+       optional add-on.
+
+       The fifteen-compatible repository exists under a different name:
+           https://gitlab.com/PixelOS-AOSP/vendor_gms-15
+           branch fifteen -> ffe5c52d947eec784a07124dfb72e95840e8f3c7
+       It contains products/gms.mk, products/board.mk, common/,
+       proprietary-files.txt and the RRO overlays — the structure
+       common.mk expects.
+
+       `<remove-project>` deletes the upstream entry, then the
+       `<project>` below re-adds the same path from the correct repo at a
+       pinned SHA. Order matters: repo applies manifest nodes in document
+       order, so the removal must precede the re-add.
+       Evidence + residual risk: KNOWN_BLOCKERS.md B-14.
+       ================================================================ -->
+  <remove-project name="vendor_gms" />
+
+  <project path="vendor/gms"
+           name="vendor_gms-15"
+           revision="ffe5c52d947eec784a07124dfb72e95840e8f3c7"
+           remote="PixelOS-Gitlab"
+           clone-depth="1" />
+
+  <!-- ================================================================
+       Remotes. PixelOS fifteen declares these in snippets/custom.xml and
+       snippets/lineage.xml; re-declaring the same name+fetch is harmless
+       and keeps this file self-contained for review.
+       ================================================================ -->
+  <remote name="PixelOS"
+          fetch="https://github.com/PixelOS-AOSP"
+          revision="refs/heads/fifteen" />
+
+  <remote name="LineageOS"
+          fetch="https://github.com/"
+          review="https://review.lineageos.org/"
+          revision="refs/heads/lineage-22.2" />
+
+  <!-- vendor/gms lives on GitLab. Attributes copied verbatim from
+       snippets/custom.xml so git-repo's remote equality check does not raise
+       "remote PixelOS-Gitlab already exists with different attributes". -->
+  <remote name="PixelOS-Gitlab"
+          fetch="https://gitlab.com/PixelOS-AOSP"
+          revision="refs/heads/fifteen" />
+
+  <!-- ================================================================
+       INTENTIONALLY NOT DECLARED
+       —————————————————————————————————
+       vendor/xiaomi/equuleus            generated from MIUI V12.5.2.0.QECCNXM
+       vendor/xiaomi/sdm845-common       generated from MIUI blobs
+       vendor/lineage                    does not exist in PixelOS fifteen;
+                                         replaced by vendor/aosp (in the
+                                         upstream manifest, see patches)
+       device/qcom/common                not present in PixelOS fifteen and
+                                         not referenced by either device tree
+       ================================================================ -->
+
+</manifest>

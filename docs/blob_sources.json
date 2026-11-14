@@ -1,0 +1,122 @@
+{
+  "schema": "pixelos-equuleus/blob-sources/v1",
+  "recorded": "2026-11-12",
+  "notes": "Machine-readable record of the proprietary-blob source decision. See BLOB_SOURCES.md for the narrative and for what was actually executed.",
+  "route": {
+    "name": "official-lineageos-ota",
+    "rationale": "LineageOS wiki documents that extract-files.py accepts a LineageOS installation ZIP; the official equuleus build is produced from the same four repositories this project pins.",
+    "wiki": "https://lineageos.github.io/lineage_wiki/extracting_blobs_from_zips.html",
+    "wiki_fetched": "2026-11-12",
+    "supersedes": "five-image reconstruction (beryllium V12.0.3.0.QEJMIXM, PNX RKQ1.200906.002, lemonadep TP1A.220624.003, lemonadep UKQ1.230924.001, caymanslm SKQ1.211103.001)"
+  },
+  "device": {
+    "codename": "equuleus",
+    "api": "https://download.lineageos.org/api/v2/devices/equuleus",
+    "http_status": 200,
+    "name": "Mi 8 Pro",
+    "oem": "Xiaomi",
+    "versions": ["22.2"],
+    "dependencies": [
+      "android_device_xiaomi_equuleus",
+      "android_device_xiaomi_sdm845-common",
+      "android_hardware_xiaomi",
+      "android_kernel_xiaomi_sdm845"
+    ],
+    "dependencies_match_project_pins": true
+  },
+  "selected_build": {
+    "version": "22.2",
+    "date": "2026-11-10",
+    "datetime": 1794296705,
+    "filename": "lineage-22.2-20261110-nightly-equuleus-signed.zip",
+    "url": "https://mirrorbits.lineageos.org/full/equuleus/20261110/lineage-22.2-20261110-nightly-equuleus-signed.zip",
+    "redirect_observed": "https://mirrors.ustc.edu.cn/lineageos/full/equuleus/20261110/lineage-22.2-20261110-nightly-equuleus-signed.zip",
+    "size_bytes": 1223204572,
+    "sha1": "acea844fc41bc06a0cc59e5550dee698b9f54d14",
+    "sha256": "2ebd3d4bb7168135353c8b543bb79da4e53a1efccf32fd91c498e9fa9fe365ee",
+    "type": "nightly",
+    "os_sdk_level": 35,
+    "os_patch_level": "2026-10-01"
+  },
+  "alternate_builds": [
+    {
+      "date": "2026-11-03",
+      "filename": "lineage-22.2-20261103-nightly-equuleus-signed.zip",
+      "size_bytes": 1223240764,
+      "sha256": "36df2643b7253df00419fc2b553bd2756f7b5cee95ea31b55ef70a277efa0d8a",
+      "url": "https://mirrorbits.lineageos.org/full/equuleus/20261103/lineage-22.2-20261103-nightly-equuleus-signed.zip"
+    },
+    {
+      "date": "2026-10-27",
+      "filename": "lineage-22.2-20261027-nightly-equuleus-signed.zip",
+      "size_bytes": 1223203279,
+      "sha256": "7ed6cfefc572b41e32adda3c5698ec6769657d5cdf4b9aa0c3a60d69166a54d3",
+      "url": "https://mirrorbits.lineageos.org/full/equuleus/20261027/lineage-22.2-20261027-nightly-equuleus-signed.zip"
+    }
+  ],
+  "ota_format": {
+    "verified": true,
+    "method": "HTTP range request for the first 1048576 bytes, parsed locally",
+    "http_status": 206,
+    "bytes_read": 1048576,
+    "magic": "PK\\x03\\x04",
+    "metadata_entry": "META-INF/com/android/metadata",
+    "metadata_offset": 30,
+    "properties": {
+      "ota-type": "BLOCK",
+      "ota-required-cache": "0",
+      "pre-device": "equuleus",
+      "post-sdk-level": "35",
+      "post-security-patch-level": "2026-10-01",
+      "post-build-incremental": "4ce3f00d23",
+      "post-timestamp": "1794296705",
+      "post-build": "Xiaomi/equuleus/equuleus:8.1.0/OPM1.171019.026/V9.6.6.0.OECCNFD:user/release-keys"
+    },
+    "extract_utils_compatible": true,
+    "extract_utils_notes": "ota-type=BLOCK means a block-based payload.bin; extract-utils handles it via extract_super_retrofit / lp.py / sparse_img.py. A full download is required because the payload sits mid-file."
+  },
+  "execution_status": {
+    "ota_fully_downloaded": true,
+    "ota_download_attempted": true,
+    "ota_sha256_verified": true,
+    "partitions_extracted": true,
+    "partitions_dumped": true,
+    "blob_list_resolved": true,
+    "vendor_equuleus_generated": true,
+    "vendor_sdm845_common_generated": true,
+    "strict_verification_run": true,
+    "strict_verification_result": "PASS",
+    "strict_verification_fail": 0,
+    "entries_present": "862/862",
+    "method": "block-OTA (.new.dat.br + transfer.list) -> ext4 images -> debugfs dump -> list resolution -> tree generation",
+    "not_the_same_as": "extract-utils' extract-files.py; this route was implemented directly because the audit host has no synced PixelOS tree for Soong name resolution. See B01_EXTRACTION_REPORT.json for the full record.",
+    "honesty_note": "Both vendor trees were really generated and passed strict verification. This does NOT mean the ROM compiles or boots, and FOD/camera/NFC remain untested on hardware."
+  },
+  "scripts": {
+    "fetch": "scripts/fetch_lineage_ota.sh",
+    "extract": "scripts/extract_blobs_from_ota.sh",
+    "verify": "scripts/verify_blobs.py --strict --json blob-report.json"
+  },
+  "expected_gap_classes": [
+    {
+      "class": "system_ext path differences",
+      "why": "LineageOS relocates some blobs; the list may name a different path",
+      "handling": "reported as MISSING with the expected path"
+    },
+    {
+      "class": "recovery-only blobs",
+      "why": "present in recovery.img, not in the OTA payload",
+      "handling": "documented per row; recovery.img is a separate recorded source"
+    },
+    {
+      "class": "files LineageOS dropped",
+      "why": "the device tree may still list a blob the ROM no longer ships",
+      "handling": "reported; the correct fix is trimming the list, not substituting a file"
+    },
+    {
+      "class": "FIX_SONAME rename targets",
+      "why": "extraction renames them, so the source name legitimately does not exist",
+      "handling": "verify_blobs.py checks <dst>, not <src>"
+    }
+  ]
+}

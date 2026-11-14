@@ -1,0 +1,38 @@
+From 9ce93dd7bdac62ab9a150a8f7d69e576271e16b1 Mon Sep 17 00:00:00 2001
+From: equuleus port <port@example.invalid>
+Date: Wed, 12 Nov 2026 00:00:00 +0800
+Subject: [PATCH] equuleus: point libpn553_fw.so at lib64
+
+The blob list requests vendor/lib/libpn553_fw.so, but the device ships
+only vendor/lib64/libpn553_fw.so, and that file is a 64-bit ELF.
+
+Measured on the official LineageOS 22.2 equuleus OTA:
+  vendor/lib64/libpn553_fw.so  37490 bytes  ELF64  machine=183 (AArch64)
+  vendor/lib/libpn553_fw.so    absent
+
+It is not a loadable shared object: the file has no DT_SONAME and no
+DT_NEEDED. It is NXP PN553 NFC firmware in an ELF container, consumed by
+name from libnfc-nxp.conf:
+
+  NXP_FW_NAME="libpn553_fw.so"
+
+so no 32-bit ABI is involved. Placing the 64-bit ELF under lib/ to satisfy
+the literal path would make a 32-bit consumer fail to map it, which is
+worse than a missing file. Correct the path instead.
+---
+diff --git a/proprietary-files.txt b/proprietary-files.txt
+index daa31b0..5be119e 100644
+--- a/proprietary-files.txt
++++ b/proprietary-files.txt
+@@ -208,7 +208,7 @@ vendor/lib64/hw/android.hardware.keymaster@3.0-impl-qti.so
+ 
+ # NFC firmware
+ vendor/firmware/libpn553_rec.so
+-vendor/lib/libpn553_fw.so
++vendor/lib64/libpn553_fw.so
+ 
+ # QDCM calibration data
+ vendor/etc/qdcm_calib_data_ss_notch_fhd_cmd_dsi_panel.xml
+-- 
+2.56.0.windows.2
+

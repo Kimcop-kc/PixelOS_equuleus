@@ -1,0 +1,44 @@
+From d98969ff1029ef6df35001d090efdcc8b2813fa6 Mon Sep 17 00:00:00 2001
+From: equuleus port <port@example.invalid>
+Date: Wed, 12 Nov 2026 00:00:00 +0800
+Subject: [PATCH] manifest: repoint vendor/gms to the fifteen-compatible repo
+
+vendor/aosp/config/common.mk inherits vendor/gms/products/gms.mk
+unconditionally, so GMS is a hard dependency of aosp_equuleus via
+common_full_phone.mk -> common_mobile_full.mk -> common_mobile.mk ->
+common.mk. PixelOS fifteen pins vendor/gms at refs/heads/fifteen, but
+https://gitlab.com/PixelOS-AOSP/vendor_gms has only a `sixteen` branch,
+so that project cannot be synced.
+
+The fifteen-compatible repository exists as vendor_gms-15; its fifteen
+branch is ffe5c52d947eec784a07124dfb72e95840e8f3c7 and it contains
+products/gms.mk, products/board.mk, common/, proprietary-files.txt and
+the RRO overlays that common.mk expects.
+
+Apply to the manifest repository (snippets/custom.xml), then re-run
+`repo init`/`repo sync`. Tracked as KNOWN_BLOCKERS.md B-14.
+---
+diff --git a/snippets/custom.xml b/snippets/custom.xml
+index e568003..49edabb 100644
+--- a/snippets/custom.xml
++++ b/snippets/custom.xml
+@@ -40,7 +40,15 @@
+   <project path="packages/apps/Updater" name="packages_apps_Updater" remote="PixelOS" />
+   <project path="vendor/aosp" name="vendor_aosp" remote="PixelOS" />
+   <project path="vendor/custom-preference" name="vendor_custom-preference" remote="PixelOS" />
+-  <project path="vendor/gms" name="vendor_gms" clone-depth="1" remote="PixelOS-Gitlab" />
++  <!-- PixelOS fifteen declares vendor/gms at refs/heads/fifteen, but that
++       repository (https://gitlab.com/PixelOS-AOSP/vendor_gms) only has a
++       `sixteen` branch. vendor/aosp/config/common.mk inherits
++       vendor/gms/products/gms.mk unconditionally, so this is a hard dependency
++       of every product that inherits common_full_phone.mk. Repoint to the
++       fifteen-compatible repository and pin the commit. -->
++  <project path="vendor/gms" name="vendor_gms-15"
++           revision="ffe5c52d947eec784a07124dfb72e95840e8f3c7"
++           clone-depth="1" remote="PixelOS-Gitlab" />
+   <project path="vendor/google/overlays/ThemeIcons" name="vendor_google_overlays_ThemeIcons" remote="PixelOS" />
+ 
+ </manifest>
+-- 
+2.56.0.windows.2
+

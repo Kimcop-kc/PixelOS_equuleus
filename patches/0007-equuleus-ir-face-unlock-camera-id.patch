@@ -1,0 +1,45 @@
+From 6a774a4acbd490e88d786429a8c18b76507a2486 Mon Sep 17 00:00:00 2001
+From: equuleus port <port@example.invalid>
+Date: Wed, 12 Nov 2026 00:00:00 +0800
+Subject: [PATCH] equuleus: set the IR camera id for ParanoidSense face unlock
+
+ParanoidSense resolves its camera in CameraUtil.getCameraId():
+
+    val cameraIdProp = SystemProperties.get("ro.face.sense_service.camera_id")
+    if (cameraIdProp != null && cameraIdProp != "") return cameraIdProp.toInt()
+    ... forEach cameraId -> if LENS_FACING == LENS_FACING_FRONT -> return it
+
+When the property is absent the fallback picks the first front-facing camera,
+which on this device is the ordinary RGB selfie sensor (S5K3T1). RGB face
+matching works in daylight and fails in the dark, which is exactly the "RGB
+pretending to be IR" failure this port must avoid. Setting it is mandatory.
+
+camera id 5 is the infrared camera. Evidence (all from files in this repo; see
+DEVICE_AUDIT.md section 7):
+
+  * four camera sensor modules ship for this device: imx363 (primary), s5k3m3
+    (telephoto), s5k3t1 (front RGB) and ov9282. The OmniVision OV9282 is a 1MP
+    global-shutter MONOCHROME part, i.e. the IR camera.
+  * device/xiaomi/equuleus/overlay-lineage/.../Aperture/config.xml already lists
+    aux camera ids 3 and 4 as ignorable, so the IR device enumerates above them
+    and the next free aux slot is 5.
+  * the established Xiaomi sdm845 custom-ROM adaptation for this exact device
+    sets ro.face.sense_service.camera_id=5.
+
+NOT VERIFIED on hardware: the id has not been confirmed by enumerating cameras
+on a booted build of this tree. If the device differs, change this property;
+no code change is required.
+---
+diff --git a/system_ext.prop b/system_ext.prop
+index df8eb63..33c1279 100644
+--- a/system_ext.prop
++++ b/system_ext.prop
+@@ -1,3 +1,8 @@
+ # IFAAService
+ persist.vendor.sys.fp.udfps.location.X_Y=453,1640
+ persist.vendor.sys.fp.udfps.size.width_height=173,173
++
++# IR face unlock (ParanoidSense)
++# The app reads this first; without it, CameraUtil falls back to the
++# first LENS_FACING_FRONT camera, i.e. the RGB selfie sensor.
++ro.face.sense_service.camera_id=5

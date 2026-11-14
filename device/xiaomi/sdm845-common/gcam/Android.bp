@@ -1,0 +1,33 @@
+// Google Camera (GCam) port by Urnyx05, version 7.3.018 v2.5.
+//
+// This is a prebuilt, presigned APK shipped as the device's only camera
+// application: Aperture is excluded through PRODUCT_NO_CAMERA in
+// aosp_equuleus.mk, so STILL_IMAGE_CAMERA always resolves to this package
+// and the system never shows an application chooser.
+//
+// presigned + preprocessed are both required because the APK targets
+// SDK >= 30 (signature v2 must be preserved).
+//
+// skip_preprocessed_apk_checks is required as well:
+//   - The build verifies presigned APK zip alignment and insists that all
+//     lib/*.so entries are STORED rather than deflated. This upstream APK
+//     ships compressed JNI libraries. Rewriting the archive to satisfy the
+//     check would invalidate the v2 signature and the APK could then no
+//     longer install or pass Google service checks, so the checks are
+//     skipped instead. Re-compressing JNI libs only costs a little start
+//     up time on this device.
+
+android_app_import {
+    name: "GCam",
+    apk: "GCam_7.3.018_Urnyx05-v2.5.apk",
+    presigned: true,
+    preprocessed: true,
+    skip_preprocessed_apk_checks: true,
+
+    dex_preopt: {
+        enabled: false,
+    },
+
+    // GCam is arm64 only; the device has no 32-bit userspace.
+    compile_multilib: "64",
+}

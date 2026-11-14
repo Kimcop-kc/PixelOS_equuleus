@@ -1,0 +1,35 @@
+From 0b9e77ff47e3eb0a7d502da57237fac1da8903bf Mon Sep 17 00:00:00 2001
+From: equuleus port <port@example.invalid>
+Date: Wed, 12 Nov 2026 00:00:00 +0800
+Subject: [PATCH] sdm845-common: allow ParanoidSense to open the aux IR camera
+
+frameworks/base Camera.shouldExposeAuxCamera() collapses enumeration to two
+cameras for any package not listed in vendor.camera.aux.packagelist:
+
+    String packageName = ActivityThread.currentOpPackageName();
+    List<String> packageList = Arrays.asList(
+        SystemProperties.get("vendor.camera.aux.packagelist", packageName).split(","));
+    ...
+    return packageList.contains(packageName) && !packageExcludelist.contains(packageName);
+
+The IR camera is an auxiliary device, so a correct camera id alone is not
+enough: without co.aospa.sense in this list the app still cannot open it.
+
+This APPENDS to the existing list. A widely-copied adaptation of this change
+replaces org.lineageos.aperture.dev with co.aospa.sense; doing that here would
+silently remove Aperture's auxiliary-camera access, so every existing entry is
+preserved verbatim and the new package is appended.
+---
+diff --git a/vendor.prop b/vendor.prop
+index 8a741d7..cac9e38 100644
+--- a/vendor.prop
++++ b/vendor.prop
+@@ -102,7 +102,7 @@ persist.vendor.qcom.bluetooth.twsp_state.enabled=false
+ vendor.qcom.bluetooth.soc=cherokee
+ 
+ # Camera
+-vendor.camera.aux.packagelist=com.android.camera,org.codeaurora.snapcam,org.lineageos.aperture,org.lineageos.aperture.dev
++vendor.camera.aux.packagelist=com.android.camera,org.codeaurora.snapcam,org.lineageos.aperture,org.lineageos.aperture.dev,co.aospa.sense
+ 
+ # Chipset
+ ro.soc.manufacturer=Qualcomm

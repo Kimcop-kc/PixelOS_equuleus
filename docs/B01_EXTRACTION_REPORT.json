@@ -1,0 +1,152 @@
+{
+  "phase": "B-01 proprietary blob extraction",
+  "executed": "2026-11-12",
+  "host": "Windows 11 + Git-bash + WSL debugfs; OTA fully downloaded and parsed",
+  "source": {
+    "ota": "lineage-22.2-20261110-nightly-equuleus-signed.zip",
+    "sha256": "2ebd3d4bb7168135353c8b543bb79da4e53a1efccf32fd91c498e9fa9fe365ee",
+    "size_bytes": 1223204572,
+    "sha256_verified": true,
+    "pre_device": "equuleus",
+    "ota_type": "BLOCK"
+  },
+  "stages_executed": [
+    "full 1.2 GiB OTA download",
+    "sha256 verification against the published digest",
+    "OTA metadata / pre-device assertion",
+    "block-OTA extraction to ext4 images (5 partitions)",
+    "ext4 dump via debugfs (read-only, no root)",
+    "862-entry blob-list resolution",
+    "vendor tree generation with makefiles",
+    "strict verification"
+  ],
+  "partitions_extracted": {
+    "vendor": {
+      "blocks_written": 161531,
+      "size_bytes": 661630976,
+      "left_zero": 0,
+      "files_dumped": 1463
+    },
+    "product": {
+      "blocks_written": 128136,
+      "size_bytes": 2522021888,
+      "left_zero": 487592,
+      "files_dumped": 501
+    },
+    "system_ext": {
+      "blocks_written": 104076,
+      "size_bytes": 528396288,
+      "left_zero": 24927,
+      "files_dumped": 3572
+    },
+    "system": {
+      "blocks_written": 242820,
+      "size_bytes": 1106661376,
+      "left_zero": 27361,
+      "files_dumped": 2715
+    },
+    "odm": {
+      "blocks_written": 375,
+      "size_bytes": 1536000,
+      "left_zero": 0,
+      "files_dumped": 17
+    }
+  },
+  "blob_resolution": {
+    "total_entries": 862,
+    "sdm845_common": {
+      "total": 627,
+      "hit_src": 589,
+      "hit_dst": 35,
+      "hit_rename": 3,
+      "missing": 0
+    },
+    "equuleus": {
+      "total": 235,
+      "hit_src": 233,
+      "hit_dst": 1,
+      "hit_rename": 1,
+      "missing": 0
+    },
+    "missing_total": 0
+  },
+  "vendor_trees": {
+    "vendor/xiaomi/sdm845-common": {
+      "files": 632,
+      "size": "277M"
+    },
+    "vendor/xiaomi/equuleus": {
+      "files": 240,
+      "size": "248M"
+    }
+  },
+  "verification": {
+    "tool": "scripts/verify_blobs.py --strict",
+    "result": "PASS",
+    "fail": 0,
+    "resigned": 5,
+    "unverifiable": 0,
+    "present": "862/862",
+    "elf32_count": 273,
+    "elf64_count": 351,
+    "not_elf_count": 238,
+    "architecture_path_mismatches": 0,
+    "soname_matching_basename": 538,
+    "soname_mismatching": 0
+  },
+  "list_corrections": [
+    {
+      "entry": "vendor/lib/libpn553_fw.so",
+      "corrected_to": "vendor/lib64/libpn553_fw.so",
+      "patch": "patches/0006-equuleus-fix-pn553-fw-path.patch",
+      "evidence": {
+        "ota_has_lib_path": false,
+        "ota_has_lib64_path": true,
+        "size_bytes": 37490,
+        "elf_class": "ELF64",
+        "machine": 183,
+        "machine_name": "EM_AARCH64",
+        "dt_soname": [],
+        "dt_needed": [],
+        "loaded_by": "libnfc-nxp.conf: NXP_FW_NAME=\"libpn553_fw.so\"",
+        "conclusion": "NXP PN553 NFC firmware in an ELF container, consumed by filename; not a 32-bit shared library. The lib/ path in the list is a typo."
+      }
+    }
+  ],
+  "relocations": {
+    "partition_relocated": 35,
+    "reason": "LineageOS ships these under system_ext/ while the list names product/ or system/ (Android 11+ system_ext migration).",
+    "path_relocated": 4,
+    "lib32_requested_but_only_lib64_exists": 1
+  },
+  "fixup_policy": {
+    "applied_by_this_tool": false,
+    "reason": "The LineageOS OTA already carries upstream's fixups. Re-running them would double-patch. Verified example: vendor/lib64/hw/fingerprint.goodix_fod.sdm845.so already has DT_SONAME == its installed basename.",
+    "verified_already_fixed": [
+      "vendor/lib64/hw/fingerprint.goodix_fod.sdm845.so"
+    ]
+  },
+  "resigned_apks": {
+    "count": 5,
+    "entries": [
+      "system_ext/priv-app/dpmserviceapp/dpmserviceapp.apk",
+      "product/priv-app/HotwordEnrollmentOKGoogleWCD9340/HotwordEnrollmentOKGoogleWCD9340.apk",
+      "product/priv-app/HotwordEnrollmentXGoogleWCD9340/HotwordEnrollmentXGoogleWCD9340.apk",
+      "system_ext/app/PowerOffAlarm/PowerOffAlarm.apk",
+      "system_ext/priv-app/WfdService/WfdService.apk"
+    ],
+    "meaning": "LineageOS re-signs platform APKs, so their bytes differ from the hash pinned against the original firmware. Reported, not failed: this is a provenance difference, and it is also not proof the APK is correct."
+  },
+  "not_claimed": [
+    "the ROM compiles",
+    "the ROM boots",
+    "screen fingerprint works",
+    "camera works",
+    "NFC works"
+  ],
+  "remaining": [
+    "repo sync of the full PixelOS manifest",
+    "lunch / Soong / mka bacon",
+    "device-side verification of FOD, camera and NFC"
+  ]
+}

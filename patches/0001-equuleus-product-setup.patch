@@ -1,0 +1,59 @@
+From d93366f60e4a1940e39828a91a9cc2d216555129 Mon Sep 17 00:00:00 2001
+From: equuleus port <port@example.invalid>
+Date: Wed, 12 Nov 2026 00:00:00 +0800
+Subject: [PATCH] equuleus: add PixelOS product definition
+
+Rename lineage_equuleus.mk to aosp_equuleus.mk, switch the common
+product inheritance from vendor/lineage to vendor/aosp, and declare
+the real PixelOS lunch target (aosp_equuleus-bp1a-<variant>).
+
+vendor/aosp/config/common_full_phone.mk exists at
+PixelOS-AOSP/vendor_aosp@fifteen and aosp_target_release is bp1a
+(vendor/aosp/vars/aosp_target_release).
+---
+diff --git a/AndroidProducts.mk b/AndroidProducts.mk
+index db53413..b6b2cfd 100644
+--- a/AndroidProducts.mk
++++ b/AndroidProducts.mk
+@@ -5,4 +5,12 @@
+ #
+ 
+ PRODUCT_MAKEFILES := \
+-    $(LOCAL_DIR)/lineage_equuleus.mk
++    $(LOCAL_DIR)/aosp_equuleus.mk
++
++# aosp_target_release resolves to bp1a in vendor/aosp/vars/aosp_target_release
++# (verified against PixelOS-AOSP/vendor_aosp@fifteen). breakfast/lunch expand
++# `aosp_equuleus` to aosp_equuleus-bp1a-<variant>.
++COMMON_LUNCH_CHOICES := \
++    aosp_equuleus-bp1a-user \
++    aosp_equuleus-bp1a-userdebug \
++    aosp_equuleus-bp1a-eng
+diff --git a/lineage_equuleus.mk b/aosp_equuleus.mk
+similarity index 74%
+rename from lineage_equuleus.mk
+rename to aosp_equuleus.mk
+index b4d5854..f2b4428 100644
+--- a/lineage_equuleus.mk
++++ b/aosp_equuleus.mk
+@@ -1,16 +1,16 @@
+ #
+-# Copyright (C) 2019 The LineageOS Project
++# Copyright (C) 2019-2026 The LineageOS Project
+ #
+ # SPDX-License-Identifier: Apache-2.0
+ #
+ 
+ $(call inherit-product, device/xiaomi/equuleus/device.mk)
+ 
+-# Inherit some common Lineage stuff.
+-$(call inherit-product, vendor/lineage/config/common_full_phone.mk)
++# Inherit some common PixelOS stuff.
++$(call inherit-product, vendor/aosp/config/common_full_phone.mk)
+ 
+ # Device identifier. This must come after all inclusions.
+-PRODUCT_NAME := lineage_equuleus
++PRODUCT_NAME := aosp_equuleus
+ PRODUCT_DEVICE := equuleus
+ PRODUCT_BRAND := Xiaomi
+ PRODUCT_MODEL := MI 8 Pro
